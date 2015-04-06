@@ -31,22 +31,26 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //If the fragment has not been created before, create fragment
         if (savedInstanceState == null) {
             taskFragment = new PlaceholderFragment();
             getFragmentManager().beginTransaction().add(taskFragment, "MyFragment").commit();
-
+        //Else find the fragment from the manager
         } else {
 
             taskFragment = (PlaceholderFragment) getFragmentManager().findFragmentByTag("MyFragment");
         }
+        //start downloadTask
         taskFragment.startTask();
     }
 
 
 
     public static class PlaceholderFragment extends Fragment {
+    //Create Fragment to run onCreate
 
 
+        //create an instance of RssTask to download the initial RSS
         RssTask downloadTask;
 
         public PlaceholderFragment() {
@@ -74,24 +78,33 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public static class RssTask extends AsyncTask<Void,Void,Void>{
+    //Async class allows running in the background without stalling the GUI thread
 
         @Override
         protected Void doInBackground(Void... params){
+
+            //String defines location to look for RSS feed
             String downloadURL="http://www.cvedetails.com/vulnerability-feed.php?vendor_id=0&product_id=0&version_id=0&orderby=3&cvssscoremin=0";
+
+            //Make GET request and create input stream from returned data
             try {
                 URL url = new URL(downloadURL);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod(("GET"));
                 InputStream inputStream = connection.getInputStream();
+                //Call class to process the input stream as XML
                 processXML(inputStream);
             }catch (Exception e) {
-                //print exception
+                //print exception if cannot fetch RSS from URL
                 Log.v("doInBackground", e + "");
             }
             return null;
         }
 
         public void processXML(InputStream inputStream) throws Exception {
+
+            //Sets up the needed DocumentBuilder Factory and Object to parse the RSS Feed
+
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             Document xmlDocument = documentBuilder.parse(inputStream);
