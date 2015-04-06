@@ -10,6 +10,8 @@ import android.view.MenuItem;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -110,6 +112,27 @@ public class MainActivity extends ActionBarActivity {
             Document xmlDocument = documentBuilder.parse(inputStream);
             Element rootElement = xmlDocument.getDocumentElement();
             Log.v("processXML", rootElement.getTagName());
+            NodeList itemsList = rootElement.getElementsByTagName("item");
+            NodeList itemChildren = null;
+            Node currentItem = null;
+            Node currentChild = null;
+
+
+            //Loops through the XML tags printing the title contents of each item
+            for(int i = 0; i < itemsList.getLength(); i++) {
+
+                currentItem = itemsList.item(i);
+                //Log.v("processXML", currentItem.getNodeName());
+                itemChildren = currentItem.getChildNodes();
+
+                for (int j = 0; j < itemChildren.getLength(); j++) {
+                    currentChild = itemChildren.item(j);
+                    if (currentChild.getNodeName().equalsIgnoreCase("title")){
+                        Log.v("processXML", currentChild.getTextContent());
+                    }
+
+                }
+            }
 
         }
 
