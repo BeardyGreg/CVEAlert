@@ -1,5 +1,6 @@
 package com.example.greg.cvealert;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.app.Fragment;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -24,10 +26,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 //Initial commit
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements ResultsCallback {
 
     //initialize placeholder fragment no-ui
     PlaceholderFragment taskFragment;
+    ListView cveListView;
 
 
     @Override
@@ -56,14 +59,28 @@ public class MainActivity extends ActionBarActivity {
 
         //create an instance of RssTask to download the initial RSS
         RssTask downloadTask;
+        ResultsCallback callback;
+
 
         public PlaceholderFragment() {
         }
+
+
+        @Override
+        public void onAttach(Activity activity){
+            super.onAttach(activity);
+            callback = (ResultsCallback) activity;
+            if (downloadTask != null) {
+                downloadTask.onAttach(callback);
+            }
+        }
+
 
         @Override
         public void onActivityCreated(Bundle savedInstanceState) {
             // TODO Auto generate method stub
             super.onActivityCreated(savedInstanceState);
+            //This stops the fragment from getting destroyed.
             setRetainInstance(true);
         }
 
@@ -75,14 +92,45 @@ public class MainActivity extends ActionBarActivity {
             }
             else
             {
-                downloadTask=new RssTask();
+                downloadTask=new RssTask(callback);
                 downloadTask.execute();
             }
         }
+
+        @Override
+        public void onDetach(){
+            super.onDetach();
+            callback = null;
+            if (downloadTask != null){
+                downloadTask.onDetach();
+            }
+        }
+
+
     }
 
     public static class RssTask extends AsyncTask<Void,Void,ArrayList<HashMap<String, String>>>{
     //Async class allows running in the background without stalling the GUI thread
+
+
+        ResultsCallback callback = null;
+
+        public RssTask(ResultsCallback callback) {
+            this.callback = callback;
+        }
+
+        public void onAttach(ResultsCallback callback){
+            this.callback = callback;
+        }
+        public void onDetach(){
+            callback = null;
+        }
+        @Override
+        protected void onPreExecute(){
+            if (callback != null){
+                callback.onPreExecute();
+            }
+        }
 
         @Override
         protected ArrayList<HashMap<String, String>> doInBackground(Void... params){
@@ -110,6 +158,10 @@ public class MainActivity extends ActionBarActivity {
         @Override
        protected void onPostExecute(ArrayList<HashMap<String, String>> result){
             Log.v("OUTPUT", "" + result);
+            if (callback != null){
+                callback.onPostExecute(result);
+
+            }
         }
 
         public ArrayList<HashMap<String,String>> processXML(InputStream inputStream) throws Exception {
@@ -178,6 +230,17 @@ public class MainActivity extends ActionBarActivity {
     }
 
     @Override
+    public void onPreExecute(){
+
+    }
+
+    @Override
+    public void onPostExecute(ArrayList<HashMap<String,String>> results){
+        Log.v("ACTIVITYPOSTEXEC", "" + results);
+    }
+
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -198,4 +261,11 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
+}
+interface ResultsCallback
+{
+    public void onPreExecute();
+    public void onPostExecute(ArrayList<HashMap<String, String>> results);
 }
